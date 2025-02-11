@@ -6,7 +6,7 @@ import MoreContent from "./components/Response";
 
 export default function Home() {
   const [isOpened, setIsOpened] = useState(false);
-  const [showIntro, setShowIntro] = useState(false); // Nueva pantalla intermedia
+  const [showIntro, setShowIntro] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [response, setResponse] = useState(null);
   const [visibleImages, setVisibleImages] = useState([]);
@@ -26,10 +26,8 @@ export default function Home() {
     "/foto4.jpg",
   ];
 
-  const openEnvelope = () => setShowIntro(true); // Ahora muestra la pantalla intermedia
-
-  const handleShowMessage = () => setIsOpened(true); // Ahora muestra la carta
-
+  const openEnvelope = () => setShowIntro(true);
+  const handleShowMessage = () => setIsOpened(true);
   const handleShowMore = () => setShowMore(true);
 
   const handleResponse = (answer) => {
@@ -39,11 +37,29 @@ export default function Home() {
     }
   };
 
+  const getRandomPosition = () => {
+    const minX = 5;
+    const maxX = 90;
+    const minY = 10;
+    const maxY = 85;
+
+    let top, left;
+
+    do {
+      top = Math.random() * (maxY - minY) + minY;
+      left = Math.random() * (maxX - minX) + minX;
+    } while (
+      (top > 40 && top < 60 && left > 40 && left < 60) // Evita el centro
+    );
+
+    return { top: `${top}%`, left: `${left}%` };
+  };
+
   const startImageReveal = () => {
     let i = 0;
     const interval = setInterval(() => {
       if (i < images.length) {
-        setVisibleImages((prev) => [...prev, { src: images[i], id: Math.random() }]);
+        setVisibleImages((prev) => [...prev, { src: images[i], id: Math.random(), position: getRandomPosition() }]);
 
         setTimeout(() => {
           setVisibleImages((prev) => prev.filter((img) => img.id !== images[i]));
@@ -51,13 +67,9 @@ export default function Home() {
 
         i++;
       } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          setVisibleImages([]);
-          startImageReveal();
-        }, 2000);
+        i = 0; // Reinicia el índice para que el loop siga sin pausas
       }
-    }, 1500);
+    }, 1200);
   };
 
   useEffect(() => {
@@ -82,10 +94,7 @@ export default function Home() {
   return (
     <div className="bg-pink-100 flex items-center justify-center min-h-screen p-6 relative">
       <div className="text-center z-10">
-        {/* 🔹 1️⃣ Pantalla del sobre */}
         {!isOpened && !showIntro && <Envelope openEnvelope={openEnvelope} />}
-
-        {/* 🔹 2️⃣ Pantalla intermedia antes de mostrar el mensaje */}
         {showIntro && !isOpened && (
           <div className="bg-white p-8 rounded-lg shadow-lg text-center animate-fadeIn">
             <p className="text-gray-800 text-2xl font-bold">Hey Andy, tienes un nuevo mensaje 💌</p>
@@ -98,7 +107,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* 🔹 3️⃣ Pantalla de la carta con animación de escritura */}
         {isOpened && !showMore && (
           <Card
             message="Desde que te conocí, cada día tiene un poquito más de luz, más risas y más momentos que quiero atesorar. 
@@ -112,7 +120,7 @@ export default function Home() {
         {response && (
           <div className="mt-6 bg-white p-4 rounded-md shadow-lg">
             <p className="text-gray-700 text-lg font-semibold">
-              {response === "sí" ? " Te amo mi pedicto de cielo 💘" : "Siga participando"}
+              {response === "sí" ? " Te amo mi pedacito de cielo 💘" : "Siga participando"}
             </p>
             {response === "sí" && (
               <>
@@ -127,16 +135,16 @@ export default function Home() {
         )}
       </div>
 
-      {/* 🔹 Imágenes que aparecen en loop */}
+      {/* 🔹 Imágenes dispersas por la pantalla */}
       {visibleImages.map((image) => (
         <img
           key={image.id}
           src={image.src}
           alt="Foto especial"
-          className={`absolute w-40 h-40 rounded-full transition-opacity duration-5000 ease-in-out opacity-0`}
+          className="absolute w-40 h-40 rounded-full transition-opacity duration-5000 ease-in-out opacity-0"
           style={{
-            top: `${Math.random() * 80}%`,
-            left: `${Math.random() * 80}%`,
+            top: image.position.top,
+            left: image.position.left,
             transform: `translate(-50%, -50%)`,
             animation: `fadeInOut 5s ease-in-out forwards`,
           }}
