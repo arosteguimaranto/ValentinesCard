@@ -9,9 +9,19 @@ const MoreContent = ({ handleResponse }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* 📷 Imagen circular más grande */}
+      <div className="flex justify-center">
+        <img
+          src="/foto1.jpg" // Asegúrate de que la imagen esté en /public/
+          alt="Imagen especial"
+          className="w-52 h-52 rounded-full shadow-xl border-4 border-white mb-4"
+        />
+      </div>
+
       <p className="text-gray-800 text-2xl font-bold mb-4">
         ¿Te gustaría ser mi Valentín? 💕
       </p>
+
       <div className="flex justify-center gap-4 mt-4">
         <button
           onClick={() => handleResponse("sí")}

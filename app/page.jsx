@@ -2,31 +2,70 @@
 import { useState, useRef, useEffect } from "react";
 import Card from "./components/Card";
 import Envelope from "./components/Envelope";
-import MoreContent from "./components/Response"; // Asegúrate de que este es el archivo correcto
+import MoreContent from "./components/Response";
 
 export default function Home() {
   const [isOpened, setIsOpened] = useState(false);
+  const [showIntro, setShowIntro] = useState(false); // Nueva pantalla intermedia
   const [showMore, setShowMore] = useState(false);
   const [response, setResponse] = useState(null);
-  
-  // Referencia al audio para controlarlo manualmente
+  const [visibleImages, setVisibleImages] = useState([]);
+
   const audioRef = useRef(null);
 
-  const openEnvelope = () => setIsOpened(true);
+  // Rutas de imágenes desde /public
+  const images = [
+    "/foto9.jpg",
+    "/foto6.jpg",
+    "/foto8.jpg",
+    "/foto3.jpg",
+    "/foto10.jpg",
+    "/foto1.jpg",
+    "/foto5.jpg",
+    "/foto2.jpg",
+    "/foto4.jpg",
+  ];
+
+  const openEnvelope = () => setShowIntro(true); // Ahora muestra la pantalla intermedia
+
+  const handleShowMessage = () => setIsOpened(true); // Ahora muestra la carta
+
   const handleShowMore = () => setShowMore(true);
 
   const handleResponse = (answer) => {
     setResponse(answer);
+    if (answer === "sí") {
+      startImageReveal();
+    }
   };
 
-  // Efecto para reproducir el audio cuando la respuesta es "sí"
+  const startImageReveal = () => {
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < images.length) {
+        setVisibleImages((prev) => [...prev, { src: images[i], id: Math.random() }]);
+
+        setTimeout(() => {
+          setVisibleImages((prev) => prev.filter((img) => img.id !== images[i]));
+        }, 5000);
+
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          setVisibleImages([]);
+          startImageReveal();
+        }, 2000);
+      }
+    }, 1500);
+  };
+
   useEffect(() => {
     if (response === "sí" && audioRef.current) {
-      audioRef.current.play().catch(error => console.log("Reproducción bloqueada:", error));
+      audioRef.current.play().catch((error) => console.log("Reproducción bloqueada:", error));
     }
   }, [response]);
 
-  // Detener el audio cuando la pestaña no esté activa
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && audioRef.current) {
@@ -41,30 +80,44 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-pink-100 flex items-center justify-center min-h-screen p-6">
-      <div className="text-center">
-        {!isOpened && <Envelope openEnvelope={openEnvelope} />}
+    <div className="bg-pink-100 flex items-center justify-center min-h-screen p-6 relative">
+      <div className="text-center z-10">
+        {/* 🔹 1️⃣ Pantalla del sobre */}
+        {!isOpened && !showIntro && <Envelope openEnvelope={openEnvelope} />}
+
+        {/* 🔹 2️⃣ Pantalla intermedia antes de mostrar el mensaje */}
+        {showIntro && !isOpened && (
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center animate-fadeIn">
+            <p className="text-gray-800 text-2xl font-bold">Hey Andy, tienes un nuevo mensaje 💌</p>
+            <button
+              onClick={handleShowMessage}
+              className="mt-6 px-6 py-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300"
+            >
+              Ver mensaje
+            </button>
+          </div>
+        )}
+
+        {/* 🔹 3️⃣ Pantalla de la carta con animación de escritura */}
         {isOpened && !showMore && (
           <Card
-            message=" Desde que te conocí, cada día tiene un poquito más de luz, más risas y más momentos que quiero atesorar. 
-            No importa si es un día común o una fecha especial, siempre encuentro una razón para sonreír cuando estoy contigo  "
+            message="Desde que te conocí, cada día tiene un poquito más de luz, más risas y más momentos que quiero atesorar. 
+            No importa si es un día común o una fecha especial, siempre encuentro una razón para sonreír cuando estoy contigo."
             showMore={handleShowMore}
           />
         )}
 
-        {/* Solo se muestra si showMore es true y aún no hay respuesta */}
         {showMore && response === null && <MoreContent handleResponse={handleResponse} />}
 
-        {/* Mostrar resultado final cuando el usuario responde */}
         {response && (
           <div className="mt-6 bg-white p-4 rounded-md shadow-lg">
             <p className="text-gray-700 text-lg font-semibold">
-              {response === "sí" ? "Te amo Andy 💘" : "Siga participando"}
+              {response === "sí" ? " Te amo mi pedicto de cielo 💘" : "Siga participando"}
             </p>
             {response === "sí" && (
               <>
-                <img 
-                  src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExanRhcHM5bGR0bHBicnp1dnlicml4Y3hkZnl6bWo4d29hOTRqenR2MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WtcWaXm0vS3Ic/giphy.gif" 
+                <img
+                  src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGQ2Y254amVxcTVycmJrYnF0d2hiOWdlanYxbnM1djg1YWR6bzlrbyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9QQgttLmAzpZK/giphy.gif"
                   alt="GIF de amor"
                   className="w-60 mx-auto mt-4"
                 />
@@ -74,11 +127,44 @@ export default function Home() {
         )}
       </div>
 
-      {/* Audio siempre en el DOM, pero solo se activa si response === "sí" */}
+      {/* 🔹 Imágenes que aparecen en loop */}
+      {visibleImages.map((image) => (
+        <img
+          key={image.id}
+          src={image.src}
+          alt="Foto especial"
+          className={`absolute w-40 h-40 rounded-full transition-opacity duration-5000 ease-in-out opacity-0`}
+          style={{
+            top: `${Math.random() * 80}%`,
+            left: `${Math.random() * 80}%`,
+            transform: `translate(-50%, -50%)`,
+            animation: `fadeInOut 5s ease-in-out forwards`,
+          }}
+        />
+      ))}
+
+      {/* 🔹 Audio de fondo */}
       <audio ref={audioRef} loop>
         <source src="/billie-eilish-birds-of-a-feather.mp3" type="audio/mp3" />
         Tu navegador no soporta el audio.
       </audio>
+
+      {/* 🔹 Animaciones en CSS */}
+      <style jsx>{`
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: scale(0.5); }
+          20% { opacity: 1; transform: scale(1); }
+          80% { opacity: 1; }
+          100% { opacity: 0; transform: scale(1.2); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 1s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
